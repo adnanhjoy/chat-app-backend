@@ -5,7 +5,7 @@ const User = require('../../model/userSchema/userSchema');
 const sendFriendRequest = async (req, res) => {
   try {
     const { receiverId } = req.body;
-    const { senderId } = req.body;
+    const senderId = req.user.id;
 
     const friendRequest = new FriendRequest({
       sender: senderId,

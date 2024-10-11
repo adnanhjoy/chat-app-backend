@@ -5,10 +5,11 @@ const User = require('../../model/userSchema/userSchema');
 // Signup
 const signup = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const {name, username, email, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = new User({
+      name,
       username,
       email,
       password: hashedPassword
