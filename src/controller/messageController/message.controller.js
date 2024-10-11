@@ -30,7 +30,10 @@ const getMessages = async (req, res) => {
         { sender: senderId, receiver: receiverId },
         { sender: receiverId, receiver: senderId }
       ]
-    }).sort('timestamp');
+    })
+      .sort('timestamp')
+      .populate('sender')
+      .populate('receiver');
 
     res.status(200).json(messages);
   } catch (error) {

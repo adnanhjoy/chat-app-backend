@@ -56,7 +56,7 @@ const getFriendRequests = async (req, res) => {
     const requests = await FriendRequest.find({
       receiver: userId,
       status: 'pending'
-    }).populate('sender', 'username email');
+    }).populate('sender', 'name username email');
 
     res.status(200).json(requests);
   } catch (error) {
@@ -69,7 +69,7 @@ const getFriendsList = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const user = await User.findById(userId).populate('friends', 'username email');
+    const user = await User.findById(userId).populate('friends');
 
     res.status(200).json(user.friends);
   } catch (error) {
@@ -78,20 +78,58 @@ const getFriendsList = async (req, res) => {
 };
 
 
+// View the friend
+const getSingleFriend = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const friendId = req.params.friendId;
+
+    const user = await User.findById(userId)
+      .populate({
+        path: 'friends',
+        select: '-password'
+      });
+
+    const singleFriend = user.friends.find(friend => friend._id.toString() === friendId)
+
+    if (singleFriend) {
+      res.status(200).json(singleFriend);
+    } else {
+      res.status(404).json({ error: 'Friend not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching friend' });
+  }
+};
+
+
+
 // get all users 
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}).select('-password');
+    const userId = req.user.id;
+
+    const currentUser = await User.findById(userId).populate('friends');
+
+    const friendsIds = currentUser.friends.map(friend => friend._id);
+
+    const users = await User.find({
+      _id: { $nin: [...friendsIds, userId] } 
+    }).select('-password');
+
     res.status(200).json(users);
   } catch (error) {
+    console.error("Error fetching users:", error);
     res.status(500).json({ error: 'Error fetching users' });
   }
 };
+
 
 module.exports = {
   sendFriendRequest,
   acceptFriendRequest,
   getFriendRequests,
   getFriendsList,
+  getSingleFriend,
   getAllUsers
 };

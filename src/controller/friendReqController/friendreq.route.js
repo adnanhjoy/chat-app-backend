@@ -7,5 +7,6 @@ router.post('/accept', friendReqController.acceptFriendRequest)
 router.get('/request', authMiddleware, friendReqController.getFriendRequests)
 router.get('/friendlist', authMiddleware, friendReqController.getFriendsList)
 router.get('/all', authMiddleware, friendReqController.getAllUsers)
+router.get('/:friendId', authMiddleware, friendReqController.getSingleFriend)
 
 module.exports = { friendReqRoute } = router
