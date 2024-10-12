@@ -64,6 +64,26 @@ const getFriendRequests = async (req, res) => {
   }
 };
 
+
+
+// view all sent friend request 
+
+const getSentFriendRequest = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const requests = await FriendRequest.find({
+      sender: userId,
+      status: 'pending'
+    }).populate('receiver', 'name username email');
+
+    res.status(200).json(requests);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching friend requests' });
+  }
+};
+
+
 // View the friend list
 const getFriendsList = async (req, res) => {
   try {
@@ -108,13 +128,15 @@ const getSingleFriend = async (req, res) => {
 const getAllUsers = async (req, res) => {
   try {
     const userId = req.user.id;
-
     const currentUser = await User.findById(userId).populate('friends');
-
     const friendsIds = currentUser.friends.map(friend => friend._id);
-
+    const sentRequests = await FriendRequest.find({ sender: userId }).select('receiver');
+    const receivedRequests = await FriendRequest.find({ receiver: userId }).select('sender');
+    const requestedUserIds = sentRequests.map(req => req.receiver.toString());
+    const receivedUserIds = receivedRequests.map(req => req.sender.toString());
+    const excludeIds = [...friendsIds, ...requestedUserIds, ...receivedUserIds, userId];
     const users = await User.find({
-      _id: { $nin: [...friendsIds, userId] } 
+      _id: { $nin: excludeIds }
     }).select('-password');
 
     res.status(200).json(users);
@@ -125,10 +147,12 @@ const getAllUsers = async (req, res) => {
 };
 
 
+
 module.exports = {
   sendFriendRequest,
   acceptFriendRequest,
   getFriendRequests,
+  getSentFriendRequest,
   getFriendsList,
   getSingleFriend,
   getAllUsers
