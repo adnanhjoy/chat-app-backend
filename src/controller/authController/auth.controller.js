@@ -6,6 +6,11 @@ const User = require('../../model/userSchema/userSchema');
 const signup = async (req, res) => {
   try {
     const { name, username, email, password } = req.body;
+    const isExist = await User.findOne({ $or: [{ email }, { username }] });
+
+    if (isExist) {
+      return res.status(400).json({ error: 'Email or Username already exists' });
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = new User({
@@ -16,7 +21,18 @@ const signup = async (req, res) => {
     });
 
     await user.save();
-    res.status(201).json({ message: 'User created successfully' });
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+    res.status(201).json({
+      message: 'User created successfully',
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+      }
+    });
+
   } catch (error) {
     res.status(500).json({ error: 'Error creating user' });
   }
@@ -32,7 +48,7 @@ const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, userResponse.password);
     if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: userResponse._id }, 'your_jwt_secret', { expiresIn: '1h' });
+    const token = jwt.sign({ id: userResponse._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
     const user = {
       _id: userResponse._id,
       name: userResponse.name
